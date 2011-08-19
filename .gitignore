@@ -1,0 +1,10 @@
+# Ignored Python-Compiled Files
+*.pyc
+6.out
+*.6
+_*
+
+# Ignore Eclipse/PyDev Project Files
+.project
+.pydevproject
+.settings
