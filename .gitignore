@@ -3,6 +3,8 @@
 6.out
 *.6
 _*
+*.sw*
+_test/*
 
 # Ignore Eclipse/PyDev Project Files
 .project
