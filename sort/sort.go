@@ -54,3 +54,51 @@ func quickSort(a []int, p int, r int) {
 func QuickSort(a []int) {
 	quickSort(a, 0, len(a)-1)
 }
+
+// in Python these would be a lambda and C++ would be an inline
+func parent(i int) int {
+	return ((i-1)/2)
+}
+
+func left(i int) int {
+	return ((2*i)+1)
+}
+
+func right(i int) int {
+	return ((2*i)+2)
+}
+
+func MaxHeapify(a []int, i int, size int) {
+	var left = left(i)
+	var right = right(i)
+	var largest = i
+	
+	if left < size && a[left] > a[i] {
+		largest = left
+	}
+	
+	if right < size && a[right] > a[largest] {
+		largest = right
+	}
+
+	if largest != i {
+		swap(a,i,largest)
+		MaxHeapify(a, largest, size)
+	}
+}
+
+func BuildMaxHeap(a []int) {
+	for i:=(len(a)/2); i >= 0; i-- {
+		MaxHeapify(a,i,len(a))
+	}
+}
+
+func HeapSort(a []int) {
+	BuildMaxHeap(a)
+	var size = len(a)
+	for i:=len(a)-1; i >=1; i-- {
+		swap(a,0,i)
+		size = size - 1
+		MaxHeapify(a,0, size)
+	}
+}
