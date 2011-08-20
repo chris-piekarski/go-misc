@@ -63,3 +63,15 @@ func BenchmarkQuickSort_Sorted(b *testing.B){
 	}
 }
 
+func TestHeapSort(t *testing.T){
+	unsorted := []int{10,40,20,30,0,60,70,50,90,80,5,15,25}
+	fmt.Println(unsorted)
+	HeapSort(unsorted)
+	fmt.Println(unsorted)
+}
+
+func BenchmarkHeapSort_Build(b *testing.B){
+	for i:=0; i < b.N; i++ {
+		HeapSort([]int{0,10,20,30,40,50,60,70,80,90,100,110,120,130})
+	}
+}
