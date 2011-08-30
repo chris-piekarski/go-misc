@@ -4,6 +4,22 @@ import (
 	"fmt"
 )
 
+func getSortedArray() []int {
+	var a = make([]int, 1000)
+	for i:=0; i < len(a); i++ {
+		a[i] = i
+	}
+	return a
+}
+
+func getUnsortedArray() []int {
+	var a = make([]int, 1000)
+	for i,j:=0,len(a)-1; i < len(a); i,j = i+1, j-1 {
+		a[i] = j
+	}
+	return a
+}
+
 func TestSelectionSort(t *testing.T){
 	unsorted := []int{10,40,20,30,0,60,70,50,90,80}
 	fmt.Println(unsorted)
@@ -13,13 +29,13 @@ func TestSelectionSort(t *testing.T){
 
 func BenchmarkSelectionSort_Unsorted(b *testing.B){
 	for i:=0; i < b.N; i++ {
-		SelectionSort([]int{130,20,0,120,110,10,30,90,40,80,100,70,50,60})
+		SelectionSort(getUnsortedArray())
 	}
 }
 
 func BenchmarkSelectionSort_Sorted(b *testing.B){
 	for i:=0; i < b.N; i++ {
-		SelectionSort([]int{0,10,20,30,40,50,60,70,80,90,100,110,120,130})
+		SelectionSort(getSortedArray())
 	}
 }
 
@@ -33,13 +49,13 @@ func TestInsertionSort(t *testing.T){
 
 func BenchmarkInsertionSort_Unsorted(b *testing.B){
 	for i:=0; i < b.N; i++ {
-		InsertionSort([]int{130,20,0,120,110,10,30,90,40,80,100,70,50,60})
+		InsertionSort(getUnsortedArray())
 	}
 }
 
 func BenchmarkInsertionSort_Sorted(b *testing.B){
 	for i:=0; i < b.N; i++ {
-		InsertionSort([]int{0,10,20,30,40,50,60,70,80,90,100,110,120,130})
+		InsertionSort(getSortedArray())
 	}
 }
 
@@ -53,13 +69,13 @@ func TestQuickSort(t *testing.T){
 
 func BenchmarkQuickSort_Unsorted(b *testing.B){
 	for i:=0; i < b.N; i++ {
-		QuickSort([]int{130,20,0,120,110,10,30,90,40,80,100,70,50,60})
+		QuickSort(getUnsortedArray())
 	}
 }
 
 func BenchmarkQuickSort_Sorted(b *testing.B){
 	for i:=0; i < b.N; i++ {
-		QuickSort([]int{0,10,20,30,40,50,60,70,80,90,100,110,120,130})
+		QuickSort(getSortedArray())
 	}
 }
 
@@ -70,8 +86,14 @@ func TestHeapSort(t *testing.T){
 	fmt.Println(unsorted)
 }
 
-func BenchmarkHeapSort_Build(b *testing.B){
+func BenchmarkHeapSort_Unsorted(b *testing.B){
 	for i:=0; i < b.N; i++ {
-		HeapSort([]int{0,10,20,30,40,50,60,70,80,90,100,110,120,130})
+		HeapSort(getUnsortedArray())
+	}
+}
+
+func BenchmarkHeapSort_Sorted(b *testing.B){
+	for i:=0; i < b.N; i++ {
+		HeapSort(getSortedArray())
 	}
 }
