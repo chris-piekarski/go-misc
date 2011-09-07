@@ -5,8 +5,10 @@ import (
 )
 
 func TestNode(t *testing.T){
-	var n = Node{1,nil,nil}
-	fmt.Println(n)
+	var n = Node{value:1}
+	n.Insert(&Node{value:0})
+	n.Insert(&Node{value:2})
+	fmt.Println(n,n.IsLeaf(),n.Size())
 }
 
 func BenchmarkNode(b *testing.B){
