@@ -1,31 +1,30 @@
 package tree
 
-//import "fmt"
-
-type Node struct {
+// BinaryNode structure and methods support a generic binary tree with values of 'ints'
+type BinaryNode struct {
 	value int
-	left *Node
-	right *Node
-	parent *Node
+	left *BinaryNode
+	right *BinaryNode
+	parent *BinaryNode
 }
 
-func (n *Node) IsLeaf() bool {
+func (n *BinaryNode) IsLeaf() bool {
 	return (n.left == nil) && (n.right == nil)
 }
 
-func (n *Node) IsRoot() bool {
+func (n *BinaryNode) IsRoot() bool {
 	return (n.parent == nil)
 }
 
-func (n *Node) Parent() *Node {
+func (n *BinaryNode) Parent() *BinaryNode {
 	return n.parent
 }
 
-func (n *Node) IsNeighbor(a *Node) bool {
+func (n *BinaryNode) IsNeighbor(a *BinaryNode) bool {
 	return (a.parent == n.parent)
 }
 
-func (n *Node) Insert(value *Node) {
+func (n *BinaryNode) Insert(value *BinaryNode) {
 	if value.value <= n.value {
 		if n.left != nil {
 			n.left.Insert(value)
@@ -43,7 +42,11 @@ func (n *Node) Insert(value *Node) {
 	}
 }
 
-func (n *Node) Size() int {
+func (n *BinaryNode) Delete(value *BinaryNode) bool {
+	return true
+}
+
+func (n *BinaryNode) Size() int {
 	var s int = 1
 	if n.left != nil {
 		s += n.left.Size()
@@ -54,7 +57,7 @@ func (n *Node) Size() int {
 	return s
 }
 
-func (n *Node) Search(v int) *Node {
+func (n *BinaryNode) Search(v int) *BinaryNode {
 	if n == nil || n.value == v {
 		return n
 	}
@@ -67,16 +70,16 @@ func (n *Node) Search(v int) *Node {
 	return nil
 }
 
-func (n *Node) Minimum() *Node {
-	var p *Node = n
+func (n *BinaryNode) Minimum() *BinaryNode {
+	var p *BinaryNode = n
 	for p.left != nil {
 		p = p.left
 	}
 	return p
 }
 
-func (n *Node) Maximum() *Node {
-	var p *Node = n
+func (n *BinaryNode) Maximum() *BinaryNode {
+	var p *BinaryNode = n
 	for p.right != nil {
 		p = p.right
 	}
@@ -84,18 +87,54 @@ func (n *Node) Maximum() *Node {
 }
 
 // is the node with the smallest value greater than n.value
-func (n *Node) Successor() *Node {
+func (n *BinaryNode) Successor() *BinaryNode {
 	if n.right != nil {
 		return n.right.Minimum()
 	}
 	//go up tree from n until we find a node that is the left child of its parent
 
-	var y *Node = n.parent
-	var x *Node = n.right
+	var y *BinaryNode = n.parent
+	var x *BinaryNode = n.right
 	
 	for y != nil && x == y.right {
 		x = y
 		y = y.parent	
 	}
 	return y
+}
+
+func (n *BinaryNode) InorderWalk(process (func (n *BinaryNode))) {
+	if n.left != nil {
+		n.left.InorderWalk(process)
+	}
+
+	process(n)
+
+	if n.right != nil {
+		n.right.InorderWalk(process)
+	}
+}
+
+func (n *BinaryNode) PreorderWalk(process (func (n *BinaryNode))) {
+	process(n)
+	
+	if n.left != nil {
+		n.left.PreorderWalk(process)
+	}
+
+	if n.right != nil {
+		n.right.PreorderWalk(process)
+	}
+}
+
+func (n *BinaryNode) PostorderWalk(process (func (n *BinaryNode))) {
+	if n.left != nil {
+		n.left.PreorderWalk(process)
+	}
+
+	if n.right != nil {
+		n.right.PreorderWalk(process)
+	}
+	
+	process(n)
 }
