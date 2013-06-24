@@ -1,5 +1,7 @@
 No rights reserved. Use, fork, and modify at will.
 
+*Branch: Rework go code to have a workspace to work with v1.1
+
 Author: @c_piekarski
 Date: 7/26/2011
 Purpose: Learning go. This repo (goMisc) is a small collection of my first Go code ever. The "requirments" are located at the end of Day1 and Day2 slides located at $(GOROOT)/doc/*.pdf. The concurrent Pell package is one I made up to help learn the content in Day3.
