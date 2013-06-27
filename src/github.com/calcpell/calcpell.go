@@ -4,7 +4,7 @@ package main
 
 import ( "fmt"
 	 "flag"
-	 "misc/pell"
+	 "github.com/pell"
 )
 
 // Pell Numbers
