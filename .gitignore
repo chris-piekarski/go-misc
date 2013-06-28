@@ -4,7 +4,9 @@
 *.6
 _*
 *.sw*
-_test/*
+_test/
+bin/
+pkg/
 
 # Ignore Eclipse/PyDev Project Files
 .project

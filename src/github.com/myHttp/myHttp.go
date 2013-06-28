@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"io"
-	"http"
+	"net/http"
 )
 
 type data struct {
@@ -28,7 +28,7 @@ func SetFileToServe(f string) {
 }
 
 func MyHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Println(req.Method, req.RawURL, req.URL, req.Header)
+	fmt.Println(req.Method, req.URL, req.Header)
 	io.WriteString(w, string(responseData.transform()))
 }
 

@@ -3,9 +3,9 @@
 package main
 
 import (
-	"http"
+	"net/http"
 	"log"
-	"misc/myHttp"
+	"github.com/myHttp"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 	http.HandleFunc("/", myHttp.MyHandler)
 	err := http.ListenAndServe(":12345", nil)
 	if err != nil {
-		log.Fatal(err.String())
+		log.Fatal(err)
 	}
 }
 
