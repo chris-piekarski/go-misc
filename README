@@ -1,42 +1,34 @@
 No rights reserved. Use, fork, and modify at will.
 
-*Branch: Rework go code to have a workspace to work with v1.1
 
 Author: @c_piekarski
 Date: 7/26/2011
 Purpose: Learning go. This repo (goMisc) is a small collection of my first Go code ever. The "requirments" are located at the end of Day1 and Day2 slides located at $(GOROOT)/doc/*.pdf. The concurrent Pell package is one I made up to help learn the content in Day3.
 
+Date: 6/27/2013
+Rework: Work with new Go v1.1
+
 To build and run fibo:
-cd ./fibo
-make && make install
-cd ../
-6g calcfibo.go
-6l calcfibo.6
-./6.out
+go install github.com/fibo
+go install github.com/mains/calcfibo
+calcfibo
 
 To build and run myHttp:
-cd ./myHttp
-make && make install
-cd ../
-6g myServer.go
-6l myServer.6
-./6.out
+go install github.com/myHttp
+go install github.com/mains/myServer
 
 To build and run Pell:
-cd ./pell
-make && make install
-cd ../
-6g calcpell.go
-6l calcpell.6
-./6.out
+go install github.com/pell
+go isntall github.com/mains/calcpell
+calcpell
 
 To test the packages use:
-cd ./myHttp OR ./fibo OR ./pell
-gotest -v
+cd src/github.com/myHttp OR src/github.com/fibo OR src/github.com/pell
+go test
 
 To run the benchmark tests use:
-cd ./myHttp
-gotest -v -bench=.
+cd src/github.com/myHttp
+go test -bench=.
 
 
 
