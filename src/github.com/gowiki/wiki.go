@@ -114,6 +114,8 @@ func mainTwo() {
 
 
 //http://golang.org/doc/articles/wiki/
+//http://golang.org/doc/articles/json_and_go.html
+//http://labix.org/mgo
 func main() {
 	//look into Template caching
 	//look into using a closure to reduce code
