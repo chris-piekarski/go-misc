@@ -45,6 +45,13 @@ func getTitle(w http.ResponseWriter, r *http.Request) (title string, err error) 
     return title, err
 }
 
+func magHandler(w http.ResponseWriter, r *http.Request) {
+
+	body, _ := ioutil.ReadFile("mag.html")
+	
+    w.Write(body)	
+}
+
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	title, err := getTitle(w, r)
@@ -122,5 +129,6 @@ func main() {
 	http.HandleFunc("/view/", viewHandler)
 	http.HandleFunc("/edit/", editHandler)
     http.HandleFunc("/save/", saveHandler)
+    http.HandleFunc("/mags/", magHandler)
 	http.ListenAndServe(":8080", nil)
 }
