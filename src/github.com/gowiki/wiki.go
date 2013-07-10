@@ -14,6 +14,11 @@ type Page struct {
     Body  []byte
 }
 
+type Giver struct {
+	Me string
+	NotMe string
+}
+
 func (p *Page) save() error {
     filename := p.Title + ".txt"
     return ioutil.WriteFile(filename, p.Body, 0600)
@@ -43,6 +48,15 @@ func getTitle(w http.ResponseWriter, r *http.Request) (title string, err error) 
         err = errors.New("Invalid Page Title")
     }
     return title, err
+}
+
+func magStartHandler(w http.ResponseWriter, r *http.Request) {
+    me := r.FormValue("me")
+    notMe := r.FormValue("you")
+
+	g := &Giver{Me : me, NotMe : notMe}
+	t, _ := template.ParseFiles("start.html")
+    t.Execute(w, g)
 }
 
 func magHandler(w http.ResponseWriter, r *http.Request) {
@@ -130,5 +144,7 @@ func main() {
 	http.HandleFunc("/edit/", editHandler)
     http.HandleFunc("/save/", saveHandler)
     http.HandleFunc("/mags/", magHandler)
+    http.HandleFunc("/mags/start/", magStartHandler)
+    
 	http.ListenAndServe(":8080", nil)
 }
