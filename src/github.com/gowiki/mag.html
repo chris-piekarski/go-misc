@@ -1,3 +1,26 @@
+<script>
+function validateForm()
+{
+	var me=document.forms["myForm"]["me"].value;
+	var you=document.forms["myForm"]["you"].value;
+	var atpos=me.indexOf("@");
+	var dotpos=me.lastIndexOf(".");
+	if (atpos<1 || dotpos<atpos+2 || dotpos+2>=me.length)
+	  {
+	  alert("Your e-mail address must be valid");
+	  return false;
+	  }
+	  
+	var atpos=you.indexOf("@");
+	var dotpos=you.lastIndexOf(".");
+	if (atpos<1 || dotpos<atpos+2 || dotpos+2>=you.length)
+	  {
+	  alert("I need a valid contact e-mail address");
+	  return false;
+	  }
+}
+</script>
+
 <div style="text-align: center">
 <b><font size="16" color="#FF0000">magnetize.me</font></b>
 <br />
@@ -10,7 +33,7 @@
 
 
 
-<form action="/mags/start/" method="POST">
+<form id="myForm" action="/mags/start/" method="POST" onsubmit="return validateForm()">
 	<div style="text-align: center">
 		me <input type="text" name="me" value="" /><br /><br />
 		!me<input type="text" name="you" value="" /><br /><br />
