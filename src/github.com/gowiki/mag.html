@@ -1,5 +1,3 @@
-<script type="text/javascript" src="fx.js"></script>
-
 <script>
 function validateForm()
 {
@@ -35,15 +33,10 @@ function validateForm()
 
 
 
-<form id="myForm" action="/give" method="POST" onsubmit="return validateForm()">
+<form id="myForm" action="/mags/start/" method="POST" onsubmit="return validateForm()">
 	<div style="text-align: center">
 		me <input type="text" name="me" value="" /><br /><br />
-		!me<input type="text" name="notMe" value="" /><br /><br />
+		!me<input type="text" name="you" value="" /><br /><br />
 		<input type="submit" name="done" value="start giving" /><br /><br />	
 	</div>
 </form>
-
-<div style="text-align: center">
-	<b>{{.Me}}</b><br/>
-	<b>{{.NotMe}}</b>
-</div>

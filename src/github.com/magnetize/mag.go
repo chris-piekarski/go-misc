@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 	"fmt"
-	"io/ioutil"
+	//"io/ioutil"
 	"net/http"
 	"html/template"
 	"labix.org/v2/mgo"
@@ -31,13 +31,13 @@ func processPending() {
 		err := c.Find(bson.M{}).One(&result)
 		if err == nil {
 			fmt.Printf("Processing %s for %s",result.NotMe, result.Me)
-			err = c.Remove(bson.M{"me":result.Me})
+			err = c.Remove(bson.M{"me":result.Me, "notme":result.NotMe})
 			if err != nil {
 				fmt.Print(err)
 			}
 		}
 		
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }
 
@@ -58,27 +58,38 @@ func storeEntry(me string, notMe string, extra string) {
 	fmt.Print("World")
 }
 
-func giveHandler(w http.ResponseWriter, r *http.Request) {
+func giveHandler(w http.ResponseWriter, r *http.Request) *Giver {
+
     me := r.FormValue("me")
     notMe := r.FormValue("notMe")
 	g := &Giver{Me : me, NotMe : notMe, Extra : ""}
 	
-	t, _ := template.ParseFiles("start.html")
-    t.Execute(w, g)
+	//t, _ := template.ParseFiles("start.html")
+    //t.Execute(w, g)
     
     storeEntry(me, notMe, "")
+    return g
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 
-	body, _ := ioutil.ReadFile("mag.html")
+	g := &Giver{Me : "", NotMe : "", Extra : ""}
+
+	if r.Method  == "POST" {
+		fmt.Print("Got a POST")
+		g = giveHandler(w, r)
+	}
+
+	//body, _ := ioutil.ReadFile("mag.html")
+	//w.Write(body)	
 	
-    w.Write(body)	
+	t, _ := template.ParseFiles("mag.html")
+    t.Execute(w, g)
 }
 
 func main() {
     http.HandleFunc("/give", rootHandler)
-    http.HandleFunc("/give/new", giveHandler)
+    //http.HandleFunc("/give/new", giveHandler)
     
     go processPending()
     fmt.Print("Starting server\n")
