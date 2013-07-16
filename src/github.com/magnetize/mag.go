@@ -16,6 +16,7 @@ type Giver struct {
 	Extra string
 }
 
+//https://api.fullcontact.com/v2/person.json?email=bart@fullcontact.com&apiKey=a42d9db67d03a3c7
 func processPending() {
 	result := Giver{}
 	session, err := mgo.Dial("127.0.0.1")
