@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"bytes"
+	//"bytes"
 	"html/template"
 	"io/ioutil"
 	"labix.org/v2/mgo"
@@ -49,9 +49,6 @@ type FCContactInfo struct {
 	GivenName      string
 	Websites       []map[string]string
 	Chats          []map[string]string
-	Organizations  []map[string]string
-	Demographics   map[string]string
-	SocialProfiles []map[string]string
 }
 
 type FCInfo struct {
@@ -61,42 +58,22 @@ type FCInfo struct {
 	RequestId        string
 	Photos           []map[string]string
 	ContactInfo      FCContactInfo
-	DigitalFootprint map[string]string
-	Scores           []map[string]string
+	Organizations  []map[string]string
+	Demographics   map[string]string
+	SocialProfiles []map[string]interface{}
+	DigitalFootprint map[string]interface{}
 }
 
-func sendEmail(message string, recipient string) {
-	fmt.Print("Sending email...\n")
+func sendEmail(message string, subject string, recipient string) {
+	fmt.Printf("Sending email to %s with subject %s\n", recipient, subject)
 	auth := smtp.PlainAuth("", "magnetize@cpiekarski.com", "","smtp.gmail.com")
+	sub := "Subject:"+subject+"\r\n\r\n"
+	fullBody := sub + message
     err := smtp.SendMail("smtp.gmail.com:587", auth,
-		"magnetize@cpiekarski.com", []string{recipient}, []byte("Subject: Mag Test\r\n\r\n"+message))
+		"magnetize@cpiekarski.com", []string{recipient}, []byte(fullBody))
     if err != nil {
         fmt.Print(err)
     }
-    
-    fmt.Print("DONE WITH EMAIL\n")
-}
-
-
-func sendEmail2(message string, recipient string) {
-	// Connect to the remote SMTP server.
-	c, err := smtp.Dial("smtp.gmail.com:25")
-	if err != nil {
-		fmt.Print(err)
-	}
-	// Set the sender and recipient.
-	c.Mail("magnitize@cpiekarski.com")
-	c.Rcpt(recipient)
-	// Send the email body.
-	wc, err := c.Data()
-	if err != nil {
-		fmt.Print(err)
-	}
-	defer wc.Close()
-	buf := bytes.NewBufferString(message)
-	if _, err = buf.WriteTo(wc); err != nil {
-		fmt.Print(err)
-	}
 }
 
 func getFullContact(notMe string) *http.Response {
@@ -106,7 +83,6 @@ func getFullContact(notMe string) *http.Response {
 	return r
 }
 
-//https://api.fullcontact.com/v2/person.json?email=bart@fullcontact.com&apiKey=a42d9db67d03a3c7
 func processPending() {
 	result := Giver{}
 	session, err := mgo.Dial("127.0.0.1")
@@ -127,6 +103,8 @@ func processPending() {
 
 			defer response.Body.Close()
 			contents, err := ioutil.ReadAll(response.Body)
+			
+			fmt.Print(len(contents))
 
 			if response.StatusCode == 200 {
 				var fci FCInfo
@@ -135,7 +113,9 @@ func processPending() {
 				fmt.Printf("%s likelihood %f\n", response.Status, fci.Likelihood)
 				storeFCEntry(fci, result.NotMe)
 				storeUserEntry(result.Me, result.NotMe)
-				sendEmail("Hello, World!", "chris@cpiekarski.com")
+				message := "We received a giving request from you for, "+result.NotMe+
+					".\r\nWe'll be in touch soon!" 
+				sendEmail(message, "New Giving Request", "chris@cpiekarski.com")
 			} else if response.StatusCode == 202 {
 				var fcs FCStatus202
 				err = json.Unmarshal(contents, &fcs)
@@ -198,10 +178,15 @@ func storeFCEntry(fce FCInfo, notMe string) {
 
 	session.SetMode(mgo.Monotonic, true)
 
+	result := FCInfo{}
 	c := session.DB("contacts").C("people")
-	err = c.Insert(&fce)
+	err = c.Find(bson.M{"email" : notMe}).One(&result)
+	
 	if err != nil {
-		panic(err)
+		err = c.Insert(&fce)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
