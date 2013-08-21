@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/op/go-logging"
 	"fmt"
-	//"bytes"
 	"html/template"
 	"io/ioutil"
-	"labix.org/v2/mgo"
+	//"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"net/smtp"
@@ -22,6 +22,8 @@ type Giver struct {
 type NotMeDetails struct {
 	NotMe string
 	Time  string
+	AddedKeywords []string
+	DeletedKeywords []string
 }
 
 type GiverList struct {
@@ -58,14 +60,16 @@ type FCInfo struct {
 	RequestId        string
 	Photos           []map[string]string
 	ContactInfo      FCContactInfo
-	Organizations  []map[string]string
-	Demographics   map[string]string
-	SocialProfiles []map[string]interface{}
+	Organizations	[]map[string]string
+	Demographics	map[string]string
+	SocialProfiles	[]map[string]interface{}
 	DigitalFootprint map[string]interface{}
 }
 
+var log = logging.MustGetLogger("package.mag")
+
 func sendEmail(message string, subject string, recipient string) {
-	fmt.Printf("Sending email to %s with subject %s\n", recipient, subject)
+	log.Debug("Sending email to %s with subject %s\n", recipient, subject)
 	auth := smtp.PlainAuth("", "magnetize@cpiekarski.com", "","smtp.gmail.com")
 	sub := "Subject:"+subject+"\r\n\r\n"
 	fullBody := sub + message
@@ -77,50 +81,144 @@ func sendEmail(message string, subject string, recipient string) {
 }
 
 func getFullContact(notMe string) *http.Response {
-	apiKey := "&apiKey=a42d9db67d03a3c7"
+	apiKey := "&apiKey="
 	url := "https://api.fullcontact.com/v2/person.json?email="
 	r, _ := http.Get(url + notMe + apiKey)
 	return r
 }
 
-func processPending() {
-	result := Giver{}
-	session, err := mgo.Dial("127.0.0.1")
-	if err != nil {
-		panic(err)
+func getFootprintTopics(notMe FCInfo) string {
+	x := ""
+	y := notMe.DigitalFootprint //.(map[string]interface{})
+	//notMe.DigitalFootprint["topics"].Array()
+	for k,v := range y {
+		switch vv := v.(type) {
+        case string:
+            fmt.Println(k, "is string", vv)
+        case int:
+            fmt.Println(k, "is int", vv)
+        case []interface{}:
+            fmt.Println(k, "is an array:")
+            if k == "topics" {
+	            for i, u := range vv {
+	                fmt.Println(i, u)
+	//                switch vvv := u.(type) {
+	//		        case interface{}:
+			           f:=u.(map[string]interface{})
+			           x = x+f["value"].(string)+"\r\n"
+	//		        }
+	            }
+	         }
+        default:
+            fmt.Println(k, "is of a type I don't know how to handle")
+        }
 	}
+	fmt.Print(x)
+	return x
+}
+
+func getUserKeywords(me string, notMe string) string {
+	addedKeys := ""
+	result := GiverList{}
+	session := getMongoSession()
+	defer session.Close()
+
+	c := session.DB("users").C("people")
+	err := c.Find(bson.M{"me": me}).One(&result)
+	
+	if err == nil {
+		for _, v := range result.NotMe {
+			log.Debug("%s", v.NotMe)
+			if (v.NotMe == notMe) {
+				log.Info("Found %s entry for %s at time %s", notMe, me, v.Time)
+				//TODO: remove DeletedKeywords from list
+				for _, vv := range v.AddedKeywords {
+					addedKeys += vv
+					addedKeys += "\r\n"
+				}
+			}
+		}
+	}
+	return addedKeys
+}
+
+func getKnownData(me string, notMe string) string {
+	session := getMongoSession()
+	defer session.Close()
+
+
+	result := FCInfo{}
+	c := session.DB("fullcontact").C("contacts")
+	_ = c.Find(bson.M{"email" : notMe}).One(&result)
+	
+	stuff := result.Demographics["locationGeneral"]
+	stuff = stuff + "\r\n" + getFootprintTopics(result)
+	stuff = stuff + "\r\n" + getUserKeywords(me, notMe)
+	return stuff
+}
+
+func processPostProcess() {
+	result := Giver{}
+	session := getMongoSession()
 	defer session.Close()
 
 	for {
-		fmt.Print("Checking for pending queries\n")
 
-		c := session.DB("pending").C("people")
+		c := session.DB("pending").C("postprocess")
 		err := c.Find(bson.M{}).One(&result)
 		if err == nil {
-			fmt.Printf("Processing %s for %s\n", result.NotMe, result.Me)
+			log.Info("Post Processing %s for %s\n", result.NotMe, result.Me)
+		
+	
+			freeData := getKnownData(result.Me, result.NotMe)
+	
+			message := "We received a giving request from you for "+result.NotMe+
+						".\r\nHere is what you know so far:\r\n"+freeData+"\r\n"+
+						"Click here to add more data: http://magnetize.me/update"
+			sendEmail(message, "New Giving Request", "chris@cpiekarski.com")
+	
+			time.Sleep(1000)
+		}
+		
+		_, err = c.RemoveAll(bson.M{"me": result.Me, "notme": result.NotMe})
+		if err != nil {
+			fmt.Print(err)
+		}
+	}
+}
+
+func processPending() {
+	result := Giver{}
+	session := getMongoSession()
+	defer session.Close()
+
+	for {
+		fmt.Print("Checking for pending requests\n")
+
+		c := session.DB("pending").C("new")
+		err := c.Find(bson.M{}).One(&result)
+		if err == nil {
+			log.Info("Processing %s for %s\n", result.NotMe, result.Me)
 
 			response := getFullContact(result.NotMe)
-
 			defer response.Body.Close()
 			contents, err := ioutil.ReadAll(response.Body)
 			
-			fmt.Print(len(contents))
+			log.Debug("Length of response contents %i", len(contents))
 
 			if response.StatusCode == 200 {
 				var fci FCInfo
-				err = json.Unmarshal(contents, &fci)
 				fci.Email = result.NotMe
-				fmt.Printf("%s likelihood %f\n", response.Status, fci.Likelihood)
+				log.Info("%s likelihood %f\n", response.Status, fci.Likelihood)
 				storeFCEntry(fci, result.NotMe)
 				storeUserEntry(result.Me, result.NotMe)
-				message := "We received a giving request from you for, "+result.NotMe+
-					".\r\nWe'll be in touch soon!" 
-				sendEmail(message, "New Giving Request", "chris@cpiekarski.com")
+				storePostProcess(result.Me, result.NotMe)
+				
 			} else if response.StatusCode == 202 {
 				var fcs FCStatus202
 				err = json.Unmarshal(contents, &fcs)
 				fcs.NotMe = result.NotMe
-				fmt.Printf("%s likelihood %f\n", response.Status, fcs.Message)
+				log.Info("%s likelihood %f queued for future search", response.Status, fcs.Message)
 				storeQueuedEntry(fcs)
 			} else {
 			
@@ -128,13 +226,13 @@ func processPending() {
 				err = json.Unmarshal(contents, &fcs)
 				fcs.NotMe = result.NotMe
 				fcs.Me = result.Me
-				fmt.Printf("%s %s\n", response.Status, fcs.Message)
+				fmt.Printf("%s %s", response.Status, fcs.Message)
 				storeFailedEntry(fcs)
 			}
 
 			_, err = c.RemoveAll(bson.M{"me": result.Me, "notme": result.NotMe})
 			if err != nil {
-				fmt.Print(err)
+				log.Error("%s", err)
 			}
 		}
 
@@ -142,19 +240,26 @@ func processPending() {
 	}
 }
 
-func storeUserEntry(me string, notMe string) {
-	result := GiverList{}
-	session, err := mgo.Dial("127.0.0.1")
+func storePostProcess(me string, notMe string) {
+	session := getMongoSession()
+	defer session.Close()
+
+	c := session.DB("pending").C("postprocess")
+	
+	err := c.Insert(&Giver{me, notMe, ""})
 	if err != nil {
 		panic(err)
 	}
+}
+
+func storeUserEntry(me string, notMe string) {
+	result := GiverList{}
+	session := getMongoSession()
 	defer session.Close()
 
-	session.SetMode(mgo.Monotonic, true)
-
 	c := session.DB("users").C("people")
-	err = c.Find(bson.M{"me": me}).One(&result)
-	newGiverDetails := NotMeDetails{notMe, time.Now().String()}
+	err := c.Find(bson.M{"me": me}).One(&result)
+	newGiverDetails := NotMeDetails{notMe, time.Now().String(), nil, nil}
 	if err == nil {
 		result.NotMe = append(result.NotMe, newGiverDetails)
 
@@ -170,101 +275,71 @@ func storeUserEntry(me string, notMe string) {
 }
 
 func storeFCEntry(fce FCInfo, notMe string) {
-	session, err := mgo.Dial("127.0.0.1")
-	if err != nil {
-		panic(err)
-	}
+	session := getMongoSession()
 	defer session.Close()
 
-	session.SetMode(mgo.Monotonic, true)
-
 	result := FCInfo{}
-	c := session.DB("contacts").C("people")
-	err = c.Find(bson.M{"email" : notMe}).One(&result)
+	c := session.DB("fullcontact").C("contacts")
+	err := c.Find(bson.M{"email" : notMe}).One(&result)
 	
 	if err != nil {
 		err = c.Insert(&fce)
 		if err != nil {
-			panic(err)
+			log.Error("Storing new entry returned %i", err)
 		}
 	}
 }
 
-func storeFailedEntry(q FCStatus404) {
-	session, err := mgo.Dial("127.0.0.1")
-	if err != nil {
-		panic(err)
+func editHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		me := r.FormValue("me")
+		notMe := r.FormValue("notMe")
+		time := r.FormValue("time")
+		
+		log.Debug("Edit handler (POST): %s is giving %s at %s", me, notMe, time)
+	} else {
+		log.Warning("No GET for give handler")
 	}
-	defer session.Close()
-
-	session.SetMode(mgo.Monotonic, true)
-
-	c := session.DB("pending").C("failed")
-	err = c.Insert(&q)
-	if err != nil {
-		panic(err)
-	}
+	
+	g := &Giver{Me: "x", NotMe: "y", Extra: "z"}
+	
+	t, _ := template.ParseFiles("edit.html")
+	t.Execute(w, g)
 }
 
-func storeQueuedEntry(q FCStatus202) {
-	session, err := mgo.Dial("127.0.0.1")
-	if err != nil {
-		panic(err)
-	}
-	defer session.Close()
-
-	session.SetMode(mgo.Monotonic, true)
-
-	c := session.DB("pending").C("queued")
-	err = c.Insert(&q)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func storeEntry(me string, notMe string, extra string) {
-	session, err := mgo.Dial("127.0.0.1")
-	if err != nil {
-		panic(err)
-	}
-	defer session.Close()
-
-	session.SetMode(mgo.Monotonic, true)
-
-	c := session.DB("pending").C("people")
-	err = c.Insert(&Giver{me, notMe, ""})
-	if err != nil {
-		panic(err)
-	}
-}
-
-func giveHandler(w http.ResponseWriter, r *http.Request) *Giver {
-
-	me := r.FormValue("me")
-	notMe := r.FormValue("notMe")
-	g := &Giver{Me: me, NotMe: notMe, Extra: ""}
-
-	storeEntry(me, notMe, "")
-	return g
-}
-
-func rootHandler(w http.ResponseWriter, r *http.Request) {
+func giveHandler(w http.ResponseWriter, r *http.Request) {
 
 	g := &Giver{Me: "", NotMe: "", Extra: ""}
 
 	if r.Method == "POST" {
-		fmt.Print("Got a POST\n")
-		g = giveHandler(w, r)
+		
+		me := r.FormValue("me")
+		notMe := r.FormValue("notMe")
+		
+		log.Debug("Give handler (POST): %s is giving %s", me, notMe)
+		
+		g.Me = me
+		g.NotMe = notMe 
+
+		storeNewRequest(me, notMe, "")
+	} else {
+		log.Warning("No GET for give handler")
 	}
 
 	t, _ := template.ParseFiles("mag.html")
 	t.Execute(w, g)
 }
 
-func main() {
-	http.HandleFunc("/give", rootHandler)
+func addHandles() {
+	log.Info("Adding mag handles")
+	http.HandleFunc("/give", giveHandler)
+	http.HandleFunc("/edit", editHandler)
+}
 
+func main() {
+	addHandles()
 	go processPending()
-	fmt.Print("Starting server\n")
+	go processPostProcess()
+	log.Debug("Starting server\n")
 	http.ListenAndServe(":8080", nil)
 }
