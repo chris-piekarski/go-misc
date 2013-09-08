@@ -2,6 +2,8 @@ package main
 
 import (
 	"labix.org/v2/mgo"
+	"net/smtp"
+	
 )
 
 func countPendingNew() int {
@@ -79,4 +81,16 @@ func storeNewRequest(me string, notMe string, extra string) {
 	if err != nil {
 		log.Warning("Store New Request Error %s", err)
 	}
+}
+
+func sendEmail(message string, subject string, recipient string) {
+	log.Debug("Sending email to %s with subject %s\n", recipient, subject)
+	auth := smtp.PlainAuth("", "magnetize@cpiekarski.com", "magnetize","smtp.gmail.com")
+	sub := "Subject:"+subject+"\r\n\r\n"
+	fullBody := sub + message
+    err := smtp.SendMail("smtp.gmail.com:587", auth,
+		"magnetize@cpiekarski.com", []string{recipient}, []byte(fullBody))
+    if err != nil {
+        log.Error("%s", err)
+    }
 }

@@ -6,82 +6,18 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
+	"net/url"
 	//"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
-	"net/smtp"
 	"time"
 )
 
-type Giver struct {
-	Me    string
-	NotMe string
-	Extra string
-}
-
-type NotMeDetails struct {
-	NotMe string
-	Time  string
-	AddedKeywords []string
-	DeletedKeywords []string
-}
-
-type GiverList struct {
-	Me    string
-	NotMe []NotMeDetails
-}
-
-type FCStatus202 struct {
-	Message   string
-	Status    int
-	RequestId string
-	NotMe     string
-}
-
-type FCStatus404 struct {
-	Message string
-	Status  int
-	NotMe   string
-	Me      string
-}
-
-type FCContactInfo struct {
-	FamilyName     string
-	FullName       string
-	GivenName      string
-	Websites       []map[string]string
-	Chats          []map[string]string
-}
-
-type FCInfo struct {
-	Email            string
-	Status           int
-	Likelihood       float32
-	RequestId        string
-	Photos           []map[string]string
-	ContactInfo      FCContactInfo
-	Organizations	[]map[string]string
-	Demographics	map[string]string
-	SocialProfiles	[]map[string]interface{}
-	DigitalFootprint map[string]interface{}
-}
-
 var log = logging.MustGetLogger("package.mag")
 
-func sendEmail(message string, subject string, recipient string) {
-	log.Debug("Sending email to %s with subject %s\n", recipient, subject)
-	auth := smtp.PlainAuth("", "magnetize@cpiekarski.com", "","smtp.gmail.com")
-	sub := "Subject:"+subject+"\r\n\r\n"
-	fullBody := sub + message
-    err := smtp.SendMail("smtp.gmail.com:587", auth,
-		"magnetize@cpiekarski.com", []string{recipient}, []byte(fullBody))
-    if err != nil {
-        fmt.Print(err)
-    }
-}
 
 func getFullContact(notMe string) *http.Response {
-	apiKey := "&apiKey="
+	apiKey := "&apiKey=a42d9db67d03a3c7"
 	url := "https://api.fullcontact.com/v2/person.json?email="
 	r, _ := http.Get(url + notMe + apiKey)
 	return r
@@ -171,10 +107,18 @@ func processPostProcess() {
 		
 	
 			freeData := getKnownData(result.Me, result.NotMe)
-	
+			
+			Url, _ := url.Parse("http://127.0.0.1:8080/edit")
+    
+		    parameters := url.Values{}
+		    parameters.Add("me", result.Me)
+		    parameters.Add("notMe", result.NotMe)
+		    parameters.Add("time", result.Extra)
+		    Url.RawQuery = parameters.Encode()
+			
 			message := "We received a giving request from you for "+result.NotMe+
 						".\r\nHere is what you know so far:\r\n"+freeData+"\r\n"+
-						"Click here to add more data: http://magnetize.me/update"
+						"Click here to add more data: "+Url.String()
 			sendEmail(message, "New Giving Request", "chris@cpiekarski.com")
 	
 			time.Sleep(1000)
@@ -211,8 +155,9 @@ func processPending() {
 				fci.Email = result.NotMe
 				log.Info("%s likelihood %f\n", response.Status, fci.Likelihood)
 				storeFCEntry(fci, result.NotMe)
-				storeUserEntry(result.Me, result.NotMe)
-				storePostProcess(result.Me, result.NotMe)
+				t := time.Now().String()
+				storeUserEntry(result.Me, result.NotMe, t)
+				storePostProcess(result.Me, result.NotMe, t)
 				
 			} else if response.StatusCode == 202 {
 				var fcs FCStatus202
@@ -240,26 +185,26 @@ func processPending() {
 	}
 }
 
-func storePostProcess(me string, notMe string) {
+func storePostProcess(me string, notMe string, now string) {
 	session := getMongoSession()
 	defer session.Close()
 
 	c := session.DB("pending").C("postprocess")
 	
-	err := c.Insert(&Giver{me, notMe, ""})
+	err := c.Insert(&Giver{me, notMe, now})
 	if err != nil {
 		panic(err)
 	}
 }
 
-func storeUserEntry(me string, notMe string) {
+func storeUserEntry(me string, notMe string, now string) {
 	result := GiverList{}
 	session := getMongoSession()
 	defer session.Close()
 
 	c := session.DB("users").C("people")
 	err := c.Find(bson.M{"me": me}).One(&result)
-	newGiverDetails := NotMeDetails{notMe, time.Now().String(), nil, nil}
+	newGiverDetails := NotMeDetails{notMe, now, nil, nil}
 	if err == nil {
 		result.NotMe = append(result.NotMe, newGiverDetails)
 
@@ -291,20 +236,35 @@ func storeFCEntry(fce FCInfo, notMe string) {
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		me := r.FormValue("me")
-		notMe := r.FormValue("notMe")
-		time := r.FormValue("time")
-		
-		log.Debug("Edit handler (POST): %s is giving %s at %s", me, notMe, time)
-	} else {
-		log.Warning("No GET for give handler")
-	}
+
+	me := r.FormValue("me")
+	notMe := r.FormValue("notMe")
+	time := r.FormValue("time")
+	log.Debug("Edit handler (GET): %s is giving %s at %s", me, notMe, time)
 	
-	g := &Giver{Me: "x", NotMe: "y", Extra: "z"}
+	
+	result := GiverList{}
+	session := getMongoSession()
+	defer session.Close()
+
+	c := session.DB("users").C("people")
+	c.Find(bson.M{"me": me}).One(&result)
+	
+//	details := NotMeDetails{NotMe: notMe, Time: time}
+//	g := &GiverList{Me: me, NotMe: []NotMeDetails{details}}
+	
+//	if err == nil {
+//		for _, v := range result.NotMe {
+//			if (v.NotMe == notMe && v.Time == time) {
+//				log.Info("Found %s entry for %s at time %s", notMe, me, v.Time)
+//				g = &v
+//				break			
+//			}
+//		}
+//	}
 	
 	t, _ := template.ParseFiles("edit.html")
-	t.Execute(w, g)
+	t.Execute(w, result)
 }
 
 func giveHandler(w http.ResponseWriter, r *http.Request) {
