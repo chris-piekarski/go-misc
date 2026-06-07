@@ -56,10 +56,6 @@ func QuickSort(a []int) {
 }
 
 // in Python these would be a lambda and C++ would be an inline
-func parent(i int) int {
-	return ((i - 1) / 2)
-}
-
 func left(i int) int {
 	return ((2 * i) + 1)
 }
@@ -90,6 +86,40 @@ func MaxHeapify(a []int, i int, size int) {
 func BuildMaxHeap(a []int) {
 	for i := (len(a) / 2); i >= 0; i-- {
 		MaxHeapify(a, i, len(a))
+	}
+}
+
+// MergeSort sorts a in ascending order using top-down merge sort. It is stable
+// and runs in O(n log n) time using O(n) auxiliary space.
+func MergeSort(a []int) {
+	if len(a) < 2 {
+		return
+	}
+	mid := len(a) / 2
+	left := append([]int(nil), a[:mid]...)
+	right := append([]int(nil), a[mid:]...)
+	MergeSort(left)
+	MergeSort(right)
+	merge(a, left, right)
+}
+
+func merge(dst, left, right []int) {
+	i, j, k := 0, 0, 0
+	for i < len(left) && j < len(right) {
+		if left[i] <= right[j] {
+			dst[k] = left[i]
+			i++
+		} else {
+			dst[k] = right[j]
+			j++
+		}
+		k++
+	}
+	for ; i < len(left); i, k = i+1, k+1 {
+		dst[k] = left[i]
+	}
+	for ; j < len(right); j, k = j+1, k+1 {
+		dst[k] = right[j]
 	}
 }
 

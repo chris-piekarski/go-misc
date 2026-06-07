@@ -36,6 +36,7 @@ var sorts = map[string]func([]int){
 	"InsertionSort": InsertionSort,
 	"QuickSort":     QuickSort,
 	"HeapSort":      HeapSort,
+	"MergeSort":     MergeSort,
 }
 
 func TestSorts(t *testing.T) {
@@ -96,5 +97,11 @@ func BenchmarkQuickSort_Unsorted(b *testing.B) {
 func BenchmarkHeapSort_Unsorted(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		HeapSort(getUnsortedArray())
+	}
+}
+
+func BenchmarkMergeSort_Unsorted(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		MergeSort(getUnsortedArray())
 	}
 }
