@@ -37,7 +37,7 @@ legacy/                               old experiments that DO NOT build — see 
 - `fibo` — Fibonacci generator; `Fibo` takes a pluggable operator func and returns a closure.
 - `pell` — Pell-number generator over a channel (`Pell(ch chan<- uint64)`).
 - `sort` — selection / insertion / quick / heap sorts on `[]int`.
-- `tree` — binary search tree (`BinaryNode`) with walks. **Known-buggy** (see below).
+- `tree` — binary search tree (`BinaryNode`): insert, search, delete, min/max, successor, and in/pre/post-order walks.
 - `myhttp` — serves a file's contents through ROT13; two ROT13 impls (table + modulo).
 - `cmd/calcfibo`, `cmd/calcpell` — flag-driven CLIs (`-i N` iterations) over fibo/pell.
 - `cmd/myserver` — HTTP server using `myhttp` (ROT13) on `:12345`.
@@ -81,18 +81,8 @@ any non-gofmt'd file, so always run `gofmt -w .` before pushing.
 
 ## Known issues (don't mistake these for your bug)
 
-- `tree.BinaryNode.Delete` is a stub that always returns `true`.
-- `tree.BinaryNode.Insert` sets the child's `parent` pointer incorrectly (points at
-  the child node, not the inserting parent), which makes `Successor` unreliable.
-- `tree.PostorderWalk` mistakenly calls `PreorderWalk` on its children.
-- `tree.Successor` uses `x = n.right` where it should be `x = n`, so it returns the
-  wrong node for right-children.
-- The above four `tree` functions (`Delete`, `Successor`, `PostorderWalk`, and the
-  parent pointer that breaks `Parent`/`IsRoot`/`IsNeighbor`) are intentionally
-  untested — fixing them is a planned separate bug-fix PR. Tests cover only the
-  correct functions.
 - `cmd/*` packages have no tests (0% coverage); their `main` funcs aren't unit
-  tested. Library packages carry the meaningful coverage (~98–100%, tree ~72%).
+  tested. The library packages carry the meaningful coverage (~98–100%, tree 100%).
 
 ## Security / secrets
 
