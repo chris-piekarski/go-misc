@@ -30,19 +30,68 @@ func (n *BinaryNode) Insert(value *BinaryNode) {
 			n.left.Insert(value)
 		} else {
 			n.left = value
-			value.parent = n.left
+			value.parent = n
 		}
 	} else {
 		if n.right != nil {
 			n.right.Insert(value)
 		} else {
 			n.right = value
-			value.parent = n.right
+			value.parent = n
 		}
 	}
 }
 
-func (n *BinaryNode) Delete(value *BinaryNode) bool {
+// Delete removes the first node holding value v from the subtree rooted at n
+// and reports whether it was found.
+//
+// To keep the caller's root pointer valid even when the root itself is removed,
+// deletion is done by value replacement: a two-child node's value is overwritten
+// with its in-order successor, reducing the problem to unlinking a node with at
+// most one child.
+func (n *BinaryNode) Delete(v int) bool {
+	target := n.Search(v)
+	if target == nil {
+		return false
+	}
+
+	// Reduce to deleting a node with at most one child.
+	for target.left != nil && target.right != nil {
+		succ := target.right.Minimum()
+		target.value = succ.value
+		target = succ
+	}
+
+	var child *BinaryNode
+	if target.left != nil {
+		child = target.left
+	} else {
+		child = target.right
+	}
+	if child != nil {
+		child.parent = target.parent
+	}
+
+	switch {
+	case target.parent == nil:
+		// Removing the root (which now has <= 1 child): copy the child's
+		// contents up so callers holding the root pointer stay valid.
+		if child != nil {
+			*target = *child
+			if target.left != nil {
+				target.left.parent = target
+			}
+			if target.right != nil {
+				target.right.parent = target
+			}
+		} else {
+			*target = BinaryNode{}
+		}
+	case target == target.parent.left:
+		target.parent.left = child
+	default:
+		target.parent.right = child
+	}
 	return true
 }
 
@@ -94,7 +143,7 @@ func (n *BinaryNode) Successor() *BinaryNode {
 	//go up tree from n until we find a node that is the left child of its parent
 
 	var y *BinaryNode = n.parent
-	var x *BinaryNode = n.right
+	var x *BinaryNode = n
 
 	for y != nil && x == y.right {
 		x = y
@@ -129,11 +178,11 @@ func (n *BinaryNode) PreorderWalk(process func(n *BinaryNode)) {
 
 func (n *BinaryNode) PostorderWalk(process func(n *BinaryNode)) {
 	if n.left != nil {
-		n.left.PreorderWalk(process)
+		n.left.PostorderWalk(process)
 	}
 
 	if n.right != nil {
-		n.right.PreorderWalk(process)
+		n.right.PostorderWalk(process)
 	}
 
 	process(n)
