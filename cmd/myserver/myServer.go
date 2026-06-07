@@ -3,22 +3,19 @@
 package main
 
 import (
-	"net/http"
+	"github.com/chris-piekarski/go-misc/myhttp"
 	"log"
-	"github.com/myHttp"
+	"net/http"
 )
 
 func main() {
 	//var iterations *int = flag.Int("i", 10, "number of iterations to run")
 	//flag.Parse()
 
-	myHttp.SetFileToServe("./myHttp/data.html")
-	http.HandleFunc("/", myHttp.MyHandler)
+	myhttp.SetFileToServe("myhttp/data.html")
+	http.HandleFunc("/", myhttp.MyHandler)
 	err := http.ListenAndServe(":12345", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
-
-
-

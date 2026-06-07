@@ -3,9 +3,9 @@
 package main
 
 import (
-	"fmt"
 	"flag"
-	"github.com/fibo"
+	"fmt"
+	"github.com/chris-piekarski/go-misc/fibo"
 )
 
 // 0 1 2 3 4 5 6 7  8  9
@@ -18,13 +18,11 @@ func main() {
 	var iterations *int = flag.Int("i", 10, "number of iterations to run")
 	flag.Parse()
 
-	oper := func(a int64, b int64) int64{
+	oper := func(a int64, b int64) int64 {
 		return a + b
 	}
 	f := fibo.Fibo(oper)
-	for i:=0; i< *iterations; i++ {
+	for i := 0; i < *iterations; i++ {
 		fmt.Print(f(), "\n")
 	}
 }
-
-

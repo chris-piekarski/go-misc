@@ -12,7 +12,7 @@ func Pell(ch chan<- uint64) {
 	ch <- 0
 	ch <- 1
 	for {
-		fn_2, fn_1 = fn_1, ((2*fn_1) + fn_2)
+		fn_2, fn_1 = fn_1, ((2 * fn_1) + fn_2)
 		ch <- fn_1
 	}
 }

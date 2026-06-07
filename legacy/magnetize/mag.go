@@ -5,11 +5,12 @@ import (
 	"fmt"
 	//"bytes"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"net/smtp"
+	"os"
 	"time"
 )
 
@@ -44,11 +45,11 @@ type FCStatus404 struct {
 }
 
 type FCContactInfo struct {
-	FamilyName     string
-	FullName       string
-	GivenName      string
-	Websites       []map[string]string
-	Chats          []map[string]string
+	FamilyName string
+	FullName   string
+	GivenName  string
+	Websites   []map[string]string
+	Chats      []map[string]string
 }
 
 type FCInfo struct {
@@ -58,26 +59,26 @@ type FCInfo struct {
 	RequestId        string
 	Photos           []map[string]string
 	ContactInfo      FCContactInfo
-	Organizations  []map[string]string
-	Demographics   map[string]string
-	SocialProfiles []map[string]interface{}
+	Organizations    []map[string]string
+	Demographics     map[string]string
+	SocialProfiles   []map[string]interface{}
 	DigitalFootprint map[string]interface{}
 }
 
 func sendEmail(message string, subject string, recipient string) {
 	fmt.Printf("Sending email to %s with subject %s\n", recipient, subject)
-	auth := smtp.PlainAuth("", "magnetize@cpiekarski.com", "","smtp.gmail.com")
-	sub := "Subject:"+subject+"\r\n\r\n"
+	auth := smtp.PlainAuth("", "magnetize@cpiekarski.com", "", "smtp.gmail.com")
+	sub := "Subject:" + subject + "\r\n\r\n"
 	fullBody := sub + message
-    err := smtp.SendMail("smtp.gmail.com:587", auth,
+	err := smtp.SendMail("smtp.gmail.com:587", auth,
 		"magnetize@cpiekarski.com", []string{recipient}, []byte(fullBody))
-    if err != nil {
-        fmt.Print(err)
-    }
+	if err != nil {
+		fmt.Print(err)
+	}
 }
 
 func getFullContact(notMe string) *http.Response {
-	apiKey := "&apiKey=a42d9db67d03a3c7"
+	apiKey := "&apiKey=" + os.Getenv("FULLCONTACT_API_KEY")
 	url := "https://api.fullcontact.com/v2/person.json?email="
 	r, _ := http.Get(url + notMe + apiKey)
 	return r
@@ -102,8 +103,8 @@ func processPending() {
 			response := getFullContact(result.NotMe)
 
 			defer response.Body.Close()
-			contents, err := ioutil.ReadAll(response.Body)
-			
+			contents, err := io.ReadAll(response.Body)
+
 			fmt.Print(len(contents))
 
 			if response.StatusCode == 200 {
@@ -113,8 +114,8 @@ func processPending() {
 				fmt.Printf("%s likelihood %f\n", response.Status, fci.Likelihood)
 				storeFCEntry(fci, result.NotMe)
 				storeUserEntry(result.Me, result.NotMe)
-				message := "We received a giving request from you for, "+result.NotMe+
-					".\r\nWe'll be in touch soon!" 
+				message := "We received a giving request from you for, " + result.NotMe +
+					".\r\nWe'll be in touch soon!"
 				sendEmail(message, "New Giving Request", "chris@cpiekarski.com")
 			} else if response.StatusCode == 202 {
 				var fcs FCStatus202
@@ -123,7 +124,7 @@ func processPending() {
 				fmt.Printf("%s likelihood %f\n", response.Status, fcs.Message)
 				storeQueuedEntry(fcs)
 			} else {
-			
+
 				var fcs FCStatus404
 				err = json.Unmarshal(contents, &fcs)
 				fcs.NotMe = result.NotMe
@@ -180,8 +181,8 @@ func storeFCEntry(fce FCInfo, notMe string) {
 
 	result := FCInfo{}
 	c := session.DB("contacts").C("people")
-	err = c.Find(bson.M{"email" : notMe}).One(&result)
-	
+	err = c.Find(bson.M{"email": notMe}).One(&result)
+
 	if err != nil {
 		err = c.Insert(&fce)
 		if err != nil {

@@ -1,25 +1,27 @@
-No rights reserved.
+go-misc
+=======
+
+A collection of small Go exercises and experiments.
 
 Author: @c_piekarski
-Date: 7/1/2013
-Purpose: Rewrite for v1.1
+Originally written 2011-2013; modernized to Go modules.
 
-To build and run fibo:
-go install github.com/fibo
-go install github.com/mains/calcfibo
+Layout
+------
+  fibo/    pell/    sort/    tree/    myhttp/    -- library packages
+  cmd/                                          -- runnable programs
+    calcfibo  calcpell  myserver  gowiki  hello
+  legacy/                                       -- old experiments that no
+                                                   longer build (see its README)
 
-To build and run myHttp:
-go install github.com/myHttp
-go install github.com/mains/myServer
+Build / run
+-----------
+  go run ./cmd/calcfibo -i 10
+  go run ./cmd/calcpell -i 10
+  go run ./cmd/myserver        # serves myhttp/data.html through ROT13 on :12345
+  go run ./cmd/gowiki          # run from cmd/gowiki so it finds its templates
 
-To build and run Pell:
-go install github.com/pell
-go install github.com/mains/calcpell
-
-To test the packages use:
-go test github.com/fibo
-go test github.com/pell
-go test github.com/tree
-
-To run the benchmark tests use:
-go test github.com/fibo -bench=.
+Test
+----
+  go test ./...
+  go test ./fibo -bench=.      # benchmarks

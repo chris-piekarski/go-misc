@@ -2,9 +2,9 @@ package tree
 
 // BinaryNode structure and methods support a generic binary tree with values of 'ints'
 type BinaryNode struct {
-	value int
-	left *BinaryNode
-	right *BinaryNode
+	value  int
+	left   *BinaryNode
+	right  *BinaryNode
 	parent *BinaryNode
 }
 
@@ -95,15 +95,15 @@ func (n *BinaryNode) Successor() *BinaryNode {
 
 	var y *BinaryNode = n.parent
 	var x *BinaryNode = n.right
-	
+
 	for y != nil && x == y.right {
 		x = y
-		y = y.parent	
+		y = y.parent
 	}
 	return y
 }
 
-func (n *BinaryNode) InorderWalk(process (func (n *BinaryNode))) {
+func (n *BinaryNode) InorderWalk(process func(n *BinaryNode)) {
 	if n.left != nil {
 		n.left.InorderWalk(process)
 	}
@@ -115,9 +115,9 @@ func (n *BinaryNode) InorderWalk(process (func (n *BinaryNode))) {
 	}
 }
 
-func (n *BinaryNode) PreorderWalk(process (func (n *BinaryNode))) {
+func (n *BinaryNode) PreorderWalk(process func(n *BinaryNode)) {
 	process(n)
-	
+
 	if n.left != nil {
 		n.left.PreorderWalk(process)
 	}
@@ -127,7 +127,7 @@ func (n *BinaryNode) PreorderWalk(process (func (n *BinaryNode))) {
 	}
 }
 
-func (n *BinaryNode) PostorderWalk(process (func (n *BinaryNode))) {
+func (n *BinaryNode) PostorderWalk(process func(n *BinaryNode)) {
 	if n.left != nil {
 		n.left.PreorderWalk(process)
 	}
@@ -135,6 +135,6 @@ func (n *BinaryNode) PostorderWalk(process (func (n *BinaryNode))) {
 	if n.right != nil {
 		n.right.PreorderWalk(process)
 	}
-	
+
 	process(n)
 }

@@ -2,9 +2,10 @@
 
 package main
 
-import ( "fmt"
-	 "flag"
-	 "github.com/pell"
+import (
+	"flag"
+	"fmt"
+	"github.com/chris-piekarski/go-misc/pell"
 )
 
 // Pell Numbers
@@ -17,7 +18,7 @@ func main() {
 	flag.Parse()
 
 	go pell.Pell(c)
-	for i:=0;i < *iterations; i++ {
+	for i := 0; i < *iterations; i++ {
 		var num uint64 = <-c
 		fmt.Println(num)
 	}

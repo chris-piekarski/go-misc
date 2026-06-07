@@ -1,18 +1,19 @@
-package myHttp
+package myhttp
 
 import (
 	"fmt"
-	"io/ioutil"
 	"io"
 	"net/http"
+	"os"
 )
 
 type data struct {
-	b []byte
+	b        []byte
 	filename string
 }
 
 var responseData *data
+
 func init() {
 	responseData = new(data)
 	responseData.filename = ""
@@ -24,7 +25,7 @@ func SetFileToServe(f string) {
 		fmt.Printf("data to send is:\n %s", string(responseData.b))
 	} else {
 		fmt.Printf("FAILED to read data from %s\n", responseData.filename)
-	}	
+	}
 }
 
 func MyHandler(w http.ResponseWriter, req *http.Request) {
@@ -32,8 +33,8 @@ func MyHandler(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, string(responseData.transform()))
 }
 
-func (d *data ) getData() bool {
-	rd, err := ioutil.ReadFile(d.filename)
+func (d *data) getData() bool {
+	rd, err := os.ReadFile(d.filename)
 	d.b = rd
 	if err != nil {
 		return false
