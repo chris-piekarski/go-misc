@@ -24,6 +24,7 @@ package stands alone.
 
 ```
 fibo/  pell/  sort/  tree/  myhttp/   library packages (with tests)
+search/  mathx/                        more library packages
 cmd/                                  runnable programs (package main)
   calcfibo  calcpell  myserver  gowiki  hello
 legacy/                               old experiments that DO NOT build — see legacy/AGENTS.md
@@ -39,6 +40,8 @@ legacy/                               old experiments that DO NOT build — see 
 - `sort` — selection / insertion / quick / heap sorts on `[]int`.
 - `tree` — binary search tree (`BinaryNode`) with walks. **Known-buggy** (see below).
 - `myhttp` — serves a file's contents through ROT13; two ROT13 impls (table + modulo).
+- `search` — generic `BinarySearch[T cmp.Ordered]` over a sorted slice.
+- `mathx` — number theory: `GCD`, `LCM`, `ModExp`, `IsPrime`, `Sieve`.
 - `cmd/calcfibo`, `cmd/calcpell` — flag-driven CLIs (`-i N` iterations) over fibo/pell.
 - `cmd/myserver` — HTTP server using `myhttp` (ROT13) on `:12345`.
 - `cmd/gowiki` — the classic golang.org wiki tutorial (view/edit/save `.txt` pages).
